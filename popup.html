@@ -16,6 +16,7 @@
       <button class="tab-button" data-tab="structure">Structure</button>
       <button class="tab-button" data-tab="tech">Tech</button>
       <button class="tab-button" data-tab="redirect">Redirection</button>
+      <button class="tab-button" data-tab="triplette">Triplette</button>
     </nav>
 
     <main>
@@ -29,7 +30,10 @@
 
       <section id="structure" class="tab-panel">
         <div class="card actions">
-          <button id="toggle-hn">Surbrillance Hn</button>
+          <div class="inline-actions">
+            <button id="toggle-hn">Surbrillance Hn</button>
+            <button id="open-hn-tree">🌳 Arbre des Hn</button>
+          </div>
           <button id="toggle-html5">Zones HTML5</button>
           <button id="toggle-external">Liens externes</button>
           <button id="toggle-internal">Liens internes</button>
@@ -48,6 +52,31 @@
         <div class="card">
           <ul id="redirect-list"></ul>
           <p id="redirect-empty">Aucune redirection détectée.</p>
+        </div>
+      </section>
+
+      <section id="triplette" class="tab-panel">
+        <div class="card">
+          <p><strong>Title:</strong> <span id="trip-title">-</span> (<span id="trip-title-len">0</span>)</p>
+          <p><strong>H1:</strong> <span id="trip-h1">-</span> (<span id="trip-h1-len">0</span>)</p>
+          <p><strong>Slug:</strong> <span id="trip-slug">-</span></p>
+          <p><strong>Meta description:</strong> <span id="trip-meta">-</span></p>
+
+          <div class="serp-previews">
+            <h3>Aperçu Google Desktop</h3>
+            <div class="serp-card desktop">
+              <p class="serp-url" id="serp-desktop-url">example.com</p>
+              <p class="serp-title" id="serp-desktop-title">Title</p>
+              <p class="serp-desc" id="serp-desktop-desc">Description</p>
+            </div>
+
+            <h3>Aperçu Google Mobile</h3>
+            <div class="serp-card mobile">
+              <p class="serp-url" id="serp-mobile-url">example.com</p>
+              <p class="serp-title" id="serp-mobile-title">Title</p>
+              <p class="serp-desc" id="serp-mobile-desc">Description</p>
+            </div>
+          </div>
         </div>
       </section>
     </main>

@@ -28,18 +28,21 @@ function placeLabel(element, text, color, scopeClass) {
   const label = document.createElement('span');
   label.className = `${labelClass} ${scopeClass}`;
   label.textContent = text;
+
+  const nearTop = element.getBoundingClientRect().top < 28;
   Object.assign(label.style, {
     position: 'absolute',
-    top: '0',
-    left: '0',
-    transform: 'translate(0, -100%)',
+    top: nearTop ? '2px' : '0',
+    left: '2px',
+    transform: nearTop ? 'none' : 'translate(0, -100%)',
     background: color,
     color: '#fff',
     fontSize: '11px',
     fontFamily: 'Arial, sans-serif',
     zIndex: '2147483647',
     padding: '1px 4px',
-    borderRadius: '3px'
+    borderRadius: '3px',
+    pointerEvents: 'none'
   });
   element.appendChild(label);
 }
@@ -49,11 +52,17 @@ function clearFeature(feature) {
   document.querySelectorAll(`.${className}`).forEach((el) => {
     el.classList.remove(className);
     el.style.outline = '';
+    el.style.outlineOffset = '';
     if (feature === 'html5') {
       el.style.backgroundColor = '';
     }
   });
   removeLabels(className);
+}
+
+function addOutlineWithSpacing(el, color) {
+  el.style.outline = `3px solid ${color}`;
+  el.style.outlineOffset = '3px';
 }
 
 function toggleHn(config) {
@@ -67,7 +76,7 @@ function toggleHn(config) {
 
   document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el) => {
     el.classList.add(className);
-    el.style.outline = `3px solid ${config.hnColor}`;
+    addOutlineWithSpacing(el, config.hnColor);
     placeLabel(el, el.tagName.toUpperCase(), config.hnColor, className);
   });
   state[feature] = true;
@@ -84,7 +93,7 @@ function toggleHtml5(config) {
 
   document.querySelectorAll('main, footer, header, aside, section').forEach((el) => {
     el.classList.add(className);
-    el.style.outline = `3px solid ${config.html5Color}`;
+    addOutlineWithSpacing(el, config.html5Color);
     el.style.backgroundColor = hexToRgba(config.html5Color, config.html5Alpha);
     placeLabel(el, el.tagName.toLowerCase(), config.html5Color, className);
   });
@@ -112,20 +121,85 @@ function toggleLinks(config, internal) {
     const isInternal = targetUrl.origin === origin;
     if ((internal && isInternal) || (!internal && !isInternal)) {
       el.classList.add(className);
-      el.style.outline = `3px solid ${internal ? config.internalLinkColor : config.externalLinkColor}`;
+      addOutlineWithSpacing(el, internal ? config.internalLinkColor : config.externalLinkColor);
     }
   });
   state[feature] = true;
 }
 
+function getNavigationPerfData() {
+  const navEntry = performance.getEntriesByType('navigation')[0];
+  if (!navEntry) return null;
+
+  const transferSize = Number.isFinite(navEntry.transferSize) ? navEntry.transferSize : null;
+  const ttfb = Number.isFinite(navEntry.responseStart) ? navEntry.responseStart : null;
+
+  return {
+    transferSize,
+    ttfb
+  };
+}
+
+function getTripletteData() {
+  const title = document.title || '';
+  const h1 = document.querySelector('h1')?.textContent?.trim() || '';
+  const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '';
+
+  let slug = '';
+  try {
+    const url = new URL(window.location.href);
+    const cleanPath = url.pathname.replace(/\/+$/, '');
+    slug = cleanPath.split('/').filter(Boolean).pop() || '/';
+  } catch (_error) {
+    slug = '';
+  }
+
+  return {
+    title,
+    titleLength: title.length,
+    h1,
+    h1Length: h1.length,
+    slug,
+    metaDescription,
+    metaDescriptionLength: metaDescription.length,
+    url: window.location.href,
+    host: window.location.host
+  };
+}
+
+function getHnTreeData() {
+  const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+  return headings.map((el, index) => ({
+    index: index + 1,
+    level: Number(el.tagName.substring(1)),
+    tag: el.tagName.toUpperCase(),
+    text: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 300)
+  }));
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type !== 'toggleStructure') return;
+  if (message.type === 'toggleStructure') {
+    const { feature, config } = message;
+    if (feature === 'hn') toggleHn(config);
+    if (feature === 'html5') toggleHtml5(config);
+    if (feature === 'externalLinks') toggleLinks(config, false);
+    if (feature === 'internalLinks') toggleLinks(config, true);
 
-  const { feature, config } = message;
-  if (feature === 'hn') toggleHn(config);
-  if (feature === 'html5') toggleHtml5(config);
-  if (feature === 'externalLinks') toggleLinks(config, false);
-  if (feature === 'internalLinks') toggleLinks(config, true);
+    sendResponse({ ok: true });
+    return;
+  }
 
-  sendResponse({ ok: true });
+  if (message.type === 'getPagePerfData') {
+    sendResponse({ data: getNavigationPerfData() });
+    return;
+  }
+
+  if (message.type === 'getTripletteData') {
+    sendResponse({ data: getTripletteData() });
+    return;
+  }
+
+  if (message.type === 'getHnTreeData') {
+    sendResponse({ data: getHnTreeData() });
+  }
 });

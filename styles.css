@@ -4,7 +4,7 @@
 
 body {
   margin: 0;
-  width: 360px;
+  width: 420px;
   color: #222;
   background: #f7f7fa;
 }
@@ -29,7 +29,7 @@ footer a {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .tab-button {
@@ -37,7 +37,7 @@ footer a {
   background: #dfdef5;
   color: #2f2785;
   padding: 8px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -84,6 +84,16 @@ main {
   cursor: pointer;
 }
 
+.inline-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.inline-actions button {
+  width: 100%;
+}
+
 .hint {
   margin: 0;
   font-size: 11px;
@@ -92,11 +102,94 @@ main {
 
 #redirect-list {
   margin: 0;
-  padding-left: 16px;
+  padding-left: 0;
   font-size: 12px;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.redirect-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.3;
+}
+
+.status-badge {
+  min-width: 38px;
+  text-align: center;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+.status-2xx {
+  background: #23a559;
+}
+
+.status-3xx {
+  background: #7b2cbf;
+}
+
+.status-4xx {
+  background: #d90429;
+}
+
+.status-5xx {
+  background: #111;
 }
 
 #redirect-empty {
   margin: 0;
   font-size: 12px;
+}
+
+.serp-previews {
+  margin-top: 12px;
+  border-top: 1px solid #ececf6;
+  padding-top: 10px;
+}
+
+.serp-previews h3 {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: #444;
+}
+
+.serp-card {
+  border: 1px solid #e9e9f4;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+
+.serp-card.mobile {
+  max-width: 290px;
+}
+
+.serp-url {
+  margin: 0 0 3px;
+  font-size: 11px;
+  color: #1a0dab;
+}
+
+.serp-title {
+  margin: 0 0 3px;
+  font-size: 18px;
+  line-height: 1.25;
+  color: #1a0dab;
+}
+
+.serp-card.mobile .serp-title {
+  font-size: 16px;
+}
+
+.serp-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #4d5156;
 }

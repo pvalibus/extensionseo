@@ -1,6 +1,7 @@
 const requestTracker = new Map();
 const perfByTab = new Map();
 const redirectsByTab = new Map();
+const redirectChainsByRequest = new Map();
 
 const togglesByTab = new Map();
 let nextRuleId = 1000;
@@ -15,6 +16,7 @@ function getTabToggles(tabId) {
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     if (details.type !== 'main_frame') return;
+
     requestTracker.set(details.requestId, {
       tabId: details.tabId,
       url: details.url,
@@ -23,7 +25,10 @@ chrome.webRequest.onBeforeRequest.addListener(
       statusCode: null,
       responseHeaders: []
     });
-    redirectsByTab.set(details.tabId, []);
+
+    if (!redirectChainsByRequest.has(details.requestId)) {
+      redirectChainsByRequest.set(details.requestId, []);
+    }
   },
   { urls: ['<all_urls>'] }
 );
@@ -33,6 +38,7 @@ chrome.webRequest.onHeadersReceived.addListener(
     if (details.type !== 'main_frame') return;
     const req = requestTracker.get(details.requestId);
     if (!req) return;
+
     req.headersTime = details.timeStamp;
     req.statusCode = details.statusCode;
     req.responseHeaders = details.responseHeaders || [];
@@ -44,13 +50,16 @@ chrome.webRequest.onHeadersReceived.addListener(
 chrome.webRequest.onBeforeRedirect.addListener(
   (details) => {
     if (details.type !== 'main_frame') return;
-    const chain = redirectsByTab.get(details.tabId) || [];
-    chain.push({
+
+    const workflow = redirectChainsByRequest.get(details.requestId) || [];
+    workflow.push({
+      step: workflow.length + 1,
+      statusCode: details.statusCode,
       from: details.url,
-      to: details.redirectUrl,
-      statusCode: details.statusCode
+      to: details.redirectUrl
     });
-    redirectsByTab.set(details.tabId, chain);
+
+    redirectChainsByRequest.set(details.requestId, workflow);
   },
   { urls: ['<all_urls>'] }
 );
@@ -79,15 +88,52 @@ chrome.webRequest.onCompleted.addListener(
       timestamp: Date.now()
     });
 
-    const chain = redirectsByTab.get(req.tabId) || [];
+    const workflow = redirectChainsByRequest.get(details.requestId) || [];
+    workflow.push({
+      step: workflow.length + 1,
+      statusCode: details.statusCode,
+      from: details.url,
+      to: details.url,
+      final: true
+    });
+
     redirectsByTab.set(req.tabId, {
       finalUrl: details.url,
       finalStatusCode: details.statusCode,
-      redirects: chain,
+      redirects: workflow,
       timestamp: Date.now()
     });
 
     requestTracker.delete(details.requestId);
+    redirectChainsByRequest.delete(details.requestId);
+  },
+  { urls: ['<all_urls>'] }
+);
+
+chrome.webRequest.onErrorOccurred.addListener(
+  (details) => {
+    if (details.type !== 'main_frame') return;
+
+    const workflow = redirectChainsByRequest.get(details.requestId) || [];
+    workflow.push({
+      step: workflow.length + 1,
+      statusCode: 'ERR',
+      from: details.url,
+      to: details.url,
+      error: details.error,
+      final: true
+    });
+
+    redirectsByTab.set(details.tabId, {
+      finalUrl: details.url,
+      finalStatusCode: 'ERR',
+      redirects: workflow,
+      timestamp: Date.now(),
+      error: details.error
+    });
+
+    requestTracker.delete(details.requestId);
+    redirectChainsByRequest.delete(details.requestId);
   },
   { urls: ['<all_urls>'] }
 );
@@ -135,6 +181,7 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   if (removeRuleIds.length) {
     await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds, addRules: [] });
   }
+
   togglesByTab.delete(tabId);
   perfByTab.delete(tabId);
   redirectsByTab.delete(tabId);
