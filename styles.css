@@ -1,0 +1,102 @@
+:root {
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  width: 360px;
+  color: #222;
+  background: #f7f7fa;
+}
+
+header,
+footer {
+  background: #4535b1;
+  color: #fff;
+  padding: 10px 12px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 14px;
+}
+
+footer a {
+  color: #fff;
+  text-decoration: underline;
+  font-size: 12px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.tab-button {
+  border: none;
+  background: #dfdef5;
+  color: #2f2785;
+  padding: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  background: #4535b1;
+  color: #fff;
+}
+
+main {
+  padding: 10px;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+}
+
+.actions button,
+.actions label {
+  font-size: 13px;
+}
+
+.actions button {
+  border: 1px solid #4535b1;
+  color: #4535b1;
+  border-radius: 6px;
+  background: #fff;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.hint {
+  margin: 0;
+  font-size: 11px;
+  color: #666;
+}
+
+#redirect-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+}
+
+#redirect-empty {
+  margin: 0;
+  font-size: 12px;
+}

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>410 gone SEO&GEO tools</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>410 gone SEO&GEO tools</h1>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab-button active" data-tab="perf">Perf</button>
+      <button class="tab-button" data-tab="structure">Structure</button>
+      <button class="tab-button" data-tab="tech">Tech</button>
+      <button class="tab-button" data-tab="redirect">Redirection</button>
+    </nav>
+
+    <main>
+      <section id="perf" class="tab-panel active">
+        <div class="card">
+          <p><strong>TTFB:</strong> <span id="ttfb">-</span></p>
+          <p><strong>Taille:</strong> <span id="size">-</span></p>
+          <p><strong>Compression:</strong> <span id="compression">-</span></p>
+        </div>
+      </section>
+
+      <section id="structure" class="tab-panel">
+        <div class="card actions">
+          <button id="toggle-hn">Surbrillance Hn</button>
+          <button id="toggle-html5">Zones HTML5</button>
+          <button id="toggle-external">Liens externes</button>
+          <button id="toggle-internal">Liens internes</button>
+        </div>
+      </section>
+
+      <section id="tech" class="tab-panel">
+        <div class="card actions">
+          <label><input type="checkbox" id="disable-js" /> Désactiver JavaScript</label>
+          <label><input type="checkbox" id="disable-css" /> Désactiver CSS</label>
+          <p class="hint">La page est rechargée après changement.</p>
+        </div>
+      </section>
+
+      <section id="redirect" class="tab-panel">
+        <div class="card">
+          <ul id="redirect-list"></ul>
+          <p id="redirect-empty">Aucune redirection détectée.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a href="options.html" target="_blank">Configuration</a>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

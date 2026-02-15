@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "410 gone SEO&GEO tools",
+  "version": "0.5",
+  "description": "Outils SEO/GEO: performance, structure, technique et redirections.",
+  "author": "https://www.410-gone.fr",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage",
+    "webRequest",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "410 gone SEO&GEO tools",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "contentScript.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

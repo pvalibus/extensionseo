@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuration - 410 gone SEO&GEO tools</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <h1>Configuration</h1>
+
+    <nav class="tabs">
+      <button class="tab-button active" data-tab="structure">Structure</button>
+      <button class="tab-button" data-tab="links">Liens</button>
+    </nav>
+
+    <section id="structure" class="tab-panel active">
+      <label>Couleur bordure Hn <input type="color" id="hnColor" /></label>
+      <label>Couleur zones HTML5 <input type="color" id="html5Color" /></label>
+      <label>Alpha zones HTML5 <input type="range" id="html5Alpha" min="0" max="1" step="0.05" /></label>
+      <span id="html5AlphaValue"></span>
+    </section>
+
+    <section id="links" class="tab-panel">
+      <label>Couleur liens externes <input type="color" id="externalLinkColor" /></label>
+      <label>Couleur liens internes <input type="color" id="internalLinkColor" /></label>
+    </section>
+
+    <button id="save">Enregistrer</button>
+    <p id="status"></p>
+
+    <script src="options.js"></script>
+  </body>
+</html>
