@@ -94,6 +94,18 @@ main {
   width: 100%;
 }
 
+.action-export-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.icon-button {
+  min-width: 38px;
+  font-size: 16px;
+  line-height: 1;
+}
+
 .hint {
   margin: 0;
   font-size: 11px;

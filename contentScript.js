@@ -16,25 +16,31 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function removeLabels(scopeClass) {
+function removeLabels(scopeClass, feature) {
   document.querySelectorAll(`.${labelClass}.${scopeClass}`).forEach((node) => node.remove());
+  if (feature) {
+    document.querySelectorAll(`.${labelClass}[data-gone-seo-feature="${feature}"]`).forEach((node) => node.remove());
+  }
 }
 
-function placeLabel(element, text, color, scopeClass) {
+function placeLabel(element, text, color, scopeClass, { inside = false } = {}) {
   if (getComputedStyle(element).position === 'static') {
     element.style.position = 'relative';
   }
 
   const label = document.createElement('span');
   label.className = `${labelClass} ${scopeClass}`;
+  label.dataset.goneSeoFeature = scopeClass.replace(appliedClassPrefix, "");
   label.textContent = text;
 
   const nearTop = element.getBoundingClientRect().top < 28;
+  const forceInside = inside || nearTop;
+
   Object.assign(label.style, {
     position: 'absolute',
-    top: nearTop ? '2px' : '0',
+    top: forceInside ? '2px' : '0',
     left: '2px',
-    transform: nearTop ? 'none' : 'translate(0, -100%)',
+    transform: forceInside ? 'none' : 'translate(0, -100%)',
     background: color,
     color: '#fff',
     fontSize: '11px',
@@ -44,6 +50,7 @@ function placeLabel(element, text, color, scopeClass) {
     borderRadius: '3px',
     pointerEvents: 'none'
   });
+
   element.appendChild(label);
 }
 
@@ -53,11 +60,22 @@ function clearFeature(feature) {
     el.classList.remove(className);
     el.style.outline = '';
     el.style.outlineOffset = '';
+    el.style.boxShadow = '';
     if (feature === 'html5') {
       el.style.backgroundColor = '';
+      if (el.dataset.goneSeoPrevMarginTop !== undefined) {
+        el.style.marginTop = el.dataset.goneSeoPrevMarginTop;
+        el.style.marginRight = el.dataset.goneSeoPrevMarginRight || '';
+        el.style.marginBottom = el.dataset.goneSeoPrevMarginBottom || '';
+        el.style.marginLeft = el.dataset.goneSeoPrevMarginLeft || '';
+        delete el.dataset.goneSeoPrevMarginTop;
+        delete el.dataset.goneSeoPrevMarginRight;
+        delete el.dataset.goneSeoPrevMarginBottom;
+        delete el.dataset.goneSeoPrevMarginLeft;
+      }
     }
   });
-  removeLabels(className);
+  removeLabels(className, feature);
 }
 
 function addOutlineWithSpacing(el, color) {
@@ -82,6 +100,14 @@ function toggleHn(config) {
   state[feature] = true;
 }
 
+function getSemanticBlocksWithDepth() {
+  const selector = 'main, footer, header, aside, section, nav, article';
+  return Array.from(document.querySelectorAll(selector)).map((el) => ({
+    el,
+    nested: !!el.parentElement?.closest(selector)
+  }));
+}
+
 function toggleHtml5(config) {
   const feature = 'html5';
   const className = `${appliedClassPrefix}${feature}`;
@@ -91,11 +117,25 @@ function toggleHtml5(config) {
     return;
   }
 
-  document.querySelectorAll('main, footer, header, aside, section').forEach((el) => {
+  getSemanticBlocksWithDepth().forEach(({ el, nested }) => {
     el.classList.add(className);
-    addOutlineWithSpacing(el, config.html5Color);
+    el.style.boxShadow = `inset 0 0 0 3px ${config.html5Color}`;
     el.style.backgroundColor = hexToRgba(config.html5Color, config.html5Alpha);
-    placeLabel(el, el.tagName.toLowerCase(), config.html5Color, className);
+
+    if (nested) {
+      if (el.dataset.goneSeoPrevMarginTop === undefined) {
+        el.dataset.goneSeoPrevMarginTop = el.style.marginTop || '';
+        el.dataset.goneSeoPrevMarginRight = el.style.marginRight || '';
+        el.dataset.goneSeoPrevMarginBottom = el.style.marginBottom || '';
+        el.dataset.goneSeoPrevMarginLeft = el.style.marginLeft || '';
+      }
+      el.style.marginTop = '17px';
+      el.style.marginRight = '6px';
+      el.style.marginBottom = '6px';
+      el.style.marginLeft = '6px';
+    }
+
+    placeLabel(el, el.tagName.toLowerCase(), config.html5Color, className, { inside: true });
   });
   state[feature] = true;
 }
@@ -167,14 +207,30 @@ function getTripletteData() {
   };
 }
 
+function headingDisplayText(el) {
+  const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
+  if (text) return text;
+
+  const img = el.querySelector('img[alt]');
+  if (img) {
+    const alt = (img.getAttribute('alt') || '').trim();
+    if (alt) return `🖼 image (${alt})`;
+  }
+
+  return '';
+}
+
 function getHnTreeData() {
   const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
-  return headings.map((el, index) => ({
-    index: index + 1,
-    level: Number(el.tagName.substring(1)),
-    tag: el.tagName.toUpperCase(),
-    text: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 300)
-  }));
+  return headings.map((el, index) => {
+    const display = headingDisplayText(el);
+    return {
+      index: index + 1,
+      level: Number(el.tagName.substring(1)),
+      tag: el.tagName.toUpperCase(),
+      text: display.slice(0, 300)
+    };
+  });
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

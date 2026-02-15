@@ -28,11 +28,12 @@ async function getCurrentTab() {
   return tab;
 }
 
-async function runInTab(tabId, func) {
+async function runInTab(tabId, func, args = []) {
   try {
     const [injection] = await chrome.scripting.executeScript({
       target: { tabId },
-      func
+      func,
+      args
     });
     return injection?.result;
   } catch (_error) {
@@ -209,12 +210,25 @@ async function renderTriplette(tabId) {
 
 async function openHnTree(tabId) {
   const hnData = await runInTab(tabId, () => {
+    function headingDisplayText(el) {
+      const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      if (text) return text;
+
+      const img = el.querySelector('img[alt]');
+      if (img) {
+        const alt = (img.getAttribute('alt') || '').trim();
+        if (alt) return `🖼 image (${alt})`;
+      }
+
+      return '';
+    }
+
     const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
     return headings.map((el, index) => ({
       index: index + 1,
       level: Number(el.tagName.substring(1)),
       tag: el.tagName.toUpperCase(),
-      text: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 300)
+      text: headingDisplayText(el).slice(0, 300)
     }));
   });
 
@@ -231,6 +245,83 @@ async function openHnTree(tabId) {
   await chrome.tabs.create({ url: target });
 }
 
+function escapeCsv(value) {
+  const text = String(value ?? '');
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(filename, rows) {
+  const csv = rows.map((row) => row.map(escapeCsv).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function exportLinksCsv(tabId, internal) {
+  const data = await runInTab(tabId, (isInternal) => {
+    const origin = window.location.origin;
+    const zoneSelector = 'main, footer, header, aside, section, nav, article';
+
+    function getEmplacement(anchor) {
+      const zones = [];
+      let current = anchor.parentElement;
+      while (current) {
+        if (current.matches && current.matches(zoneSelector)) {
+          zones.push(current.tagName.toLowerCase());
+        }
+        current = current.parentElement;
+      }
+      return zones.reverse().join(' > ');
+    }
+
+    function getAnchorAndType(linkEl) {
+      const img = linkEl.querySelector('img');
+      if (img) {
+        const alt = (img.getAttribute('alt') || '').trim();
+        return {
+          type: 'image',
+          ancre: alt || '(image sans alt)'
+        };
+      }
+
+      return {
+        type: 'texte',
+        ancre: (linkEl.textContent || '').trim().replace(/\s+/g, ' ')
+      };
+    }
+
+    return Array.from(document.querySelectorAll('a[href]')).map((a) => {
+      try {
+        const target = new URL(a.href, window.location.href);
+        const sameOrigin = target.origin === origin;
+        if ((isInternal && !sameOrigin) || (!isInternal && sameOrigin)) return null;
+
+        const { ancre, type } = getAnchorAndType(a);
+        return {
+          ancre,
+          target: target.href,
+          emplacement: getEmplacement(a),
+          type
+        };
+      } catch (_error) {
+        return null;
+      }
+    }).filter(Boolean);
+  }, [internal]);
+
+  const rows = [
+    ['ancre', 'url du lien cible', 'emplacement', 'type'],
+    ...(data || []).map((item) => [item.ancre, item.target, item.emplacement, item.type])
+  ];
+  const suffix = internal ? 'liens-internes' : 'liens-externes';
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  downloadCsv(`${suffix}-${stamp}.csv`, rows);
+}
+
 async function runStructureAction(tabId, feature) {
   const config = { ...defaultConfig, ...(await chrome.storage.sync.get(defaultConfig)) };
   await chrome.tabs.sendMessage(tabId, { type: 'toggleStructure', feature, config });
@@ -241,6 +332,8 @@ async function setupStructureActions(tabId) {
   document.getElementById('toggle-html5').addEventListener('click', () => runStructureAction(tabId, 'html5'));
   document.getElementById('toggle-external').addEventListener('click', () => runStructureAction(tabId, 'externalLinks'));
   document.getElementById('toggle-internal').addEventListener('click', () => runStructureAction(tabId, 'internalLinks'));
+  document.getElementById('export-external').addEventListener('click', () => exportLinksCsv(tabId, false));
+  document.getElementById('export-internal').addEventListener('click', () => exportLinksCsv(tabId, true));
   document.getElementById('open-hn-tree').addEventListener('click', async () => {
     await openHnTree(tabId);
     window.close();
