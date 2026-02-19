@@ -3,7 +3,9 @@ const defaults = {
   html5Color: '#ffb400',
   html5Alpha: 0.2,
   externalLinkColor: '#ff0000',
-  internalLinkColor: '#0000ff'
+  internalLinkColor: '#0000ff',
+  csvQuoteValues: true,
+  csvSeparator: ','
 };
 
 function setupTabs() {
@@ -20,6 +22,13 @@ function setupTabs() {
   });
 }
 
+function normalizeSeparator(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return ',';
+  if (raw === '\\t') return '\t';
+  return raw[0];
+}
+
 async function load() {
   const values = { ...defaults, ...(await chrome.storage.sync.get(defaults)) };
   document.getElementById('hnColor').value = values.hnColor;
@@ -28,6 +37,8 @@ async function load() {
   document.getElementById('html5AlphaValue').textContent = values.html5Alpha;
   document.getElementById('externalLinkColor').value = values.externalLinkColor;
   document.getElementById('internalLinkColor').value = values.internalLinkColor;
+  document.getElementById('csvQuoteValues').checked = !!values.csvQuoteValues;
+  document.getElementById('csvSeparator').value = values.csvSeparator === '\t' ? '\\t' : values.csvSeparator;
 }
 
 function bind() {
@@ -42,7 +53,9 @@ function bind() {
       html5Color: document.getElementById('html5Color').value,
       html5Alpha: Number.parseFloat(document.getElementById('html5Alpha').value),
       externalLinkColor: document.getElementById('externalLinkColor').value,
-      internalLinkColor: document.getElementById('internalLinkColor').value
+      internalLinkColor: document.getElementById('internalLinkColor').value,
+      csvQuoteValues: document.getElementById('csvQuoteValues').checked,
+      csvSeparator: normalizeSeparator(document.getElementById('csvSeparator').value)
     };
 
     await chrome.storage.sync.set(payload);

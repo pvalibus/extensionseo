@@ -17,6 +17,8 @@
       <button class="tab-button" data-tab="tech">Tech</button>
       <button class="tab-button" data-tab="redirect">Redirection</button>
       <button class="tab-button" data-tab="triplette">Triplette</button>
+      <button class="tab-button" data-tab="outils">Outil</button>
+      <button class="tab-button" data-tab="about" title="À propos">❓</button>
     </nav>
 
     <main>
@@ -85,10 +87,25 @@
           </div>
         </div>
       </section>
+      <section id="outils" class="tab-panel">
+        <div class="card actions">
+          <button id="open-scrap-tool">🧩 Outil Scrap XPath</button>
+        </div>
+      </section>
+
+      <section id="about" class="tab-panel">
+        <div class="card">
+          <p><strong>À propos</strong></p>
+          <p>Version : <span id="about-version">-</span></p>
+          <p>Auteur / aide : <a href="https://www.410-gone.fr/?utm_source=extension&utm_campaign=about" target="_blank" rel="noopener noreferrer">410-gone.fr</a></p>
+          <p><a href="https://chromewebstore.google.com/detail/410-gone-seogeo-tools/kcfjeeoinahnhiecbhaaeoecghcpnfam" target="_blank" rel="noopener noreferrer">Chrome Web Store</a></p>
+        </div>
+      </section>
     </main>
 
     <footer>
       <a href="options.html" target="_blank">Configuration</a>
+      <a href="https://www.410-gone.fr/?utm_source=extension&utm_campaign=footer" target="_blank" rel="noopener noreferrer">© 410-gone.fr</a>
     </footer>
 
     <script src="popup.js"></script>

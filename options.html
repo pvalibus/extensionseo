@@ -12,6 +12,7 @@
     <nav class="tabs">
       <button class="tab-button active" data-tab="structure">Structure</button>
       <button class="tab-button" data-tab="links">Liens</button>
+      <button class="tab-button" data-tab="csv">CSV</button>
     </nav>
 
     <section id="structure" class="tab-panel active">
@@ -24,6 +25,18 @@
     <section id="links" class="tab-panel">
       <label>Couleur liens externes <input type="color" id="externalLinkColor" /></label>
       <label>Couleur liens internes <input type="color" id="internalLinkColor" /></label>
+    </section>
+
+    <section id="csv" class="tab-panel">
+      <label class="checkbox-label">
+        Encapsuler les valeurs entre guillemets
+        <input type="checkbox" id="csvQuoteValues" />
+      </label>
+      <label>
+        Caractère de séparation
+        <input type="text" id="csvSeparator" maxlength="1" placeholder="," />
+      </label>
+      <p class="hint">Exemples : <code>,</code> ; <code>;</code> ; <code>|</code> ; <code>\t</code> (tabulation).</p>
     </section>
 
     <button id="save">Enregistrer</button>

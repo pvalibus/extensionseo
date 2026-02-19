@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outil Scrap XPath</title>
+    <link rel="stylesheet" href="scrap-tool.css" />
+  </head>
+  <body>
+    <header>
+      <h1>🧩 Outil Scrap XPath</h1>
+      <p>Configurez un XPath de base puis des colonnes (sous-XPath) pour extraire un tableau.</p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <label for="base-xpath">XPath de base (liste de nœuds)</label>
+        <textarea id="base-xpath" rows="3" placeholder="//*[@id='lp-lr-scene']/div/tr[*]"></textarea>
+
+        <div class="columns-head">
+          <h2>Colonnes</h2>
+          <button id="add-column" type="button">+ Ajouter une colonne</button>
+        </div>
+        <div id="columns"></div>
+
+        <div class="actions">
+          <button id="run-scrap" type="button">▶️ Lancer l'extraction</button>
+          <button id="copy-csv" type="button" disabled>📋 Copier CSV</button>
+          <button id="download-csv" type="button" disabled>📤 Export CSV</button>
+        </div>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Aperçu</h2>
+        <div class="table-wrap">
+          <table id="result-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="scrap-tool.js"></script>
+  </body>
+</html>

@@ -55,6 +55,18 @@ function setupTabs() {
   });
 }
 
+function addClickListener(id, handler) {
+  const element = document.getElementById(id);
+  if (!element) return;
+  element.addEventListener('click', handler);
+}
+
+function renderAbout() {
+  const versionEl = document.getElementById('about-version');
+  if (!versionEl) return;
+  versionEl.textContent = chrome.runtime.getManifest().version || '-';
+}
+
 function truncateByPixels(text, maxWidthPx, font) {
   if (!text) return '';
   const canvas = truncateByPixels.canvas || (truncateByPixels.canvas = document.createElement('canvas'));
@@ -328,14 +340,27 @@ async function runStructureAction(tabId, feature) {
 }
 
 async function setupStructureActions(tabId) {
-  document.getElementById('toggle-hn').addEventListener('click', () => runStructureAction(tabId, 'hn'));
-  document.getElementById('toggle-html5').addEventListener('click', () => runStructureAction(tabId, 'html5'));
-  document.getElementById('toggle-external').addEventListener('click', () => runStructureAction(tabId, 'externalLinks'));
-  document.getElementById('toggle-internal').addEventListener('click', () => runStructureAction(tabId, 'internalLinks'));
-  document.getElementById('export-external').addEventListener('click', () => exportLinksCsv(tabId, false));
-  document.getElementById('export-internal').addEventListener('click', () => exportLinksCsv(tabId, true));
-  document.getElementById('open-hn-tree').addEventListener('click', async () => {
+  addClickListener('toggle-hn', () => runStructureAction(tabId, 'hn'));
+  addClickListener('toggle-html5', () => runStructureAction(tabId, 'html5'));
+  addClickListener('toggle-external', () => runStructureAction(tabId, 'externalLinks'));
+  addClickListener('toggle-internal', () => runStructureAction(tabId, 'internalLinks'));
+  addClickListener('export-external', () => exportLinksCsv(tabId, false));
+  addClickListener('export-internal', () => exportLinksCsv(tabId, true));
+  addClickListener('open-hn-tree', async () => {
     await openHnTree(tabId);
+    window.close();
+  });
+}
+
+async function setupToolsActions(tabId) {
+  addClickListener('open-scrap-tool', async () => {
+    const toolUrl = chrome.runtime.getURL(`scrap-tool.html?tabId=${encodeURIComponent(String(tabId))}`);
+    await chrome.windows.create({
+      url: toolUrl,
+      type: 'popup',
+      width: 880,
+      height: 760
+    });
     window.close();
   });
 }
@@ -361,9 +386,13 @@ async function setupTech(tabId) {
 
 (async () => {
   setupTabs();
+  renderAbout();
+
   const tab = await getCurrentTab();
   if (!tab?.id) return;
 
-  await Promise.all([renderPerf(tab.id), renderRedirects(tab.id), renderTriplette(tab.id), setupTech(tab.id)]);
   await setupStructureActions(tab.id);
+  await setupToolsActions(tab.id);
+
+  await Promise.allSettled([renderPerf(tab.id), renderRedirects(tab.id), renderTriplette(tab.id), setupTech(tab.id)]);
 })();
