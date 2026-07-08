@@ -334,6 +334,73 @@ async function exportLinksCsv(tabId, internal) {
   downloadCsv(`${suffix}-${stamp}.csv`, rows);
 }
 
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function getDateStamp(date = new Date()) {
+  return `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}`;
+}
+
+function computeHostAndSlug(urlString) {
+  try {
+    const url = new URL(urlString);
+    const cleanPath = url.pathname.replace(/\/+$/, '');
+    const slug = cleanPath.split('/').filter(Boolean).pop() || '/';
+    return { host: url.host, slug };
+  } catch (_error) {
+    return { host: '', slug: '/' };
+  }
+}
+
+function sanitizeFilenamePart(text) {
+  const cleaned = String(text || '')
+    .replace(/[\\/:*?"<>|\s]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return cleaned || 'na';
+}
+
+function buildScreenshotFilename(urlString) {
+  const { host, slug } = computeHostAndSlug(urlString);
+  const slugPart = slug === '/' ? 'home' : slug;
+  return `${getDateStamp()}_${sanitizeFilenamePart(host)}_${sanitizeFilenamePart(slugPart)}.jpg`;
+}
+
+function downloadDataUrl(filename, dataUrl) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  a.click();
+}
+
+async function copyDataUrlImageToClipboard(dataUrl) {
+  const jpegBlob = await (await fetch(dataUrl)).blob();
+  // Chrome's clipboard image support is reliable for image/png only,
+  // so the JPEG capture is re-encoded before being copied.
+  const bitmap = await createImageBitmap(jpegBlob);
+  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  canvas.getContext('2d').drawImage(bitmap, 0, 0);
+  const pngBlob = await canvas.convertToBlob({ type: 'image/png' });
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+}
+
+function setToolsStatus(message) {
+  const el = document.getElementById('capture-status');
+  if (!el) return;
+  el.textContent = message || '';
+}
+
+function friendlyCaptureError(rawMessage) {
+  const text = String(rawMessage || '');
+  if (/cannot attach/i.test(text)) {
+    return 'Capture impossible sur cette page (page interne du navigateur ou protégée).';
+  }
+  if (/another debugger/i.test(text)) {
+    return 'Un autre outil de débogage (DevTools) est déjà attaché à cet onglet. Fermez-le puis réessayez.';
+  }
+  return text || 'échec de la capture.';
+}
+
 async function runStructureAction(tabId, feature) {
   const config = { ...defaultConfig, ...(await chrome.storage.sync.get(defaultConfig)) };
   await chrome.tabs.sendMessage(tabId, { type: 'toggleStructure', feature, config });
@@ -362,6 +429,34 @@ async function setupToolsActions(tabId) {
       height: 760
     });
     window.close();
+  });
+
+  addClickListener('capture-full-page', async () => {
+    const button = document.getElementById('capture-full-page');
+    button.disabled = true;
+    setToolsStatus('Capture en cours...');
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      const response = await chrome.runtime.sendMessage({ type: 'captureFullPageScreenshot', tabId });
+      if (!response?.ok) throw new Error(response?.error);
+      const filename = buildScreenshotFilename(tab.url);
+      downloadDataUrl(filename, response.dataUrl);
+
+      let clipboardOk = true;
+      try {
+        await copyDataUrlImageToClipboard(response.dataUrl);
+      } catch (_clipboardError) {
+        clipboardOk = false;
+      }
+
+      setToolsStatus(clipboardOk
+        ? `Capture téléchargée et copiée dans le presse-papiers : ${filename}`
+        : `Capture téléchargée : ${filename} (échec de la copie dans le presse-papiers)`);
+    } catch (error) {
+      setToolsStatus(`Erreur : ${friendlyCaptureError(error.message)}`);
+    } finally {
+      button.disabled = false;
+    }
   });
 }
 

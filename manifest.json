@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "410 gone SEO&GEO tools",
-  "version": "0.9.9.1",
+  "version": "0.9.9.2",
   "description": "Outils SEO/GEO: performance, structure, technique et redirections.",
   "author": "https://www.410-gone.fr",
   "permissions": [
@@ -10,7 +10,8 @@
     "scripting",
     "storage",
     "webRequest",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "debugger"
   ],
   "host_permissions": [
     "<all_urls>"

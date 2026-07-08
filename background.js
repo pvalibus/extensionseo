@@ -6,6 +6,43 @@ const redirectChainsByRequest = new Map();
 const togglesByTab = new Map();
 let nextRuleId = 1000;
 
+const SCREENSHOT_JPEG_QUALITY = 90;
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function captureFullPageScreenshot(tabId) {
+  const debuggee = { tabId };
+  await chrome.debugger.attach(debuggee, '1.3');
+  try {
+    const { cssContentSize } = await chrome.debugger.sendCommand(debuggee, 'Page.getLayoutMetrics');
+    const width = Math.ceil(cssContentSize.width);
+    const height = Math.ceil(cssContentSize.height);
+
+    // Resize the emulated viewport to the full page height so that
+    // position: fixed/sticky elements (headers, sidebars) are laid out
+    // once instead of being repainted for every internal capture tile.
+    await chrome.debugger.sendCommand(debuggee, 'Emulation.setDeviceMetricsOverride', {
+      width,
+      height,
+      deviceScaleFactor: 0,
+      mobile: false
+    });
+    await wait(100);
+
+    const { data } = await chrome.debugger.sendCommand(debuggee, 'Page.captureScreenshot', {
+      format: 'jpeg',
+      quality: SCREENSHOT_JPEG_QUALITY,
+      clip: { x: 0, y: 0, width, height, scale: 1 }
+    });
+    return `data:image/jpeg;base64,${data}`;
+  } finally {
+    await chrome.debugger.sendCommand(debuggee, 'Emulation.clearDeviceMetricsOverride').catch(() => {});
+    await chrome.debugger.detach(debuggee).catch(() => {});
+  }
+}
+
 function getTabToggles(tabId) {
   if (!togglesByTab.has(tabId)) {
     togglesByTab.set(tabId, { jsDisabled: false, cssDisabled: false, jsRuleId: null, cssRuleId: null });
@@ -215,6 +252,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       await updateBlockingRule(message.tabId, 'stylesheet', message.disabled);
       chrome.tabs.reload(message.tabId);
       sendResponse({ ok: true, data: getTabToggles(message.tabId) });
+      return;
+    }
+
+    if (message.type === 'captureFullPageScreenshot') {
+      const dataUrl = await captureFullPageScreenshot(message.tabId);
+      sendResponse({ ok: true, dataUrl });
       return;
     }
 
